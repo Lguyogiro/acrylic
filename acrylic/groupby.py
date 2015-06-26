@@ -56,12 +56,8 @@ class GroupbyTable(object):
         return len(self.__key_to_group_map)
 
     def __initialize_groupings(self, root_data, groupfields):
-        if len(groupfields) > 1:
-            get_key = lambda datarow: tuple([datarow[groupfield]
-                                             for groupfield in groupfields])
-        else:
-            get_key = lambda datarow: datarow[groupfields[0]]
-
+        get_key = lambda datarow: tuple([datarow[groupfield]
+                                         for groupfield in groupfields])
         for row in root_data:
             key = get_key(row)
             if key in self.__key_to_group_map:
@@ -81,35 +77,36 @@ class GroupbyTable(object):
         """
         if name:
             if len(name) > 1 or 'name' not in name:
-                raise TypeError("Unknown keyword args passed into `agg`: %s\n"
+                raise TypeError("Unknown keyword args passed into `agg`: %s"
                                 % name)
-            name = name.get('name', None)
-
-        if name is not None:
-            name = name
+            name = name.get('name')
+            if not isinstance(name, basestring):
+                raise TypeError("Column names must be strings, not `%s`"
+                                % type(name))
+            else:
+                name = name
         elif func.__name__ == '<lambda>':
             name = "lambda%04d" % self.__lambda_num
             self.__lambda_num += 1
+            name += "(%s)" % ','.join(fields)
         else:
             name = func.__name__
+            name += "(%s)" % ','.join(fields)
 
         aggregated_column = []
 
         if len(fields) > 1:
-            name += "(%s)" % ','.join(fields)
             for groupkey in self.__grouptable['groupkey']:
                 agg_data = [tuple([row[field] for field in fields])
                             for row in self.__key_to_group_map[groupkey]]
                 aggregated_column.append(func(agg_data))
         elif len(fields) == 1:
             field = fields[0]
-            name += "(%s)" % field
             for groupkey in self.__grouptable['groupkey']:
                 agg_data = [row[field]
                             for row in self.__key_to_group_map[groupkey]]
                 aggregated_column.append(func(agg_data))
         else:
-            name += "()"
             for groupkey in self.__grouptable['groupkey']:
                 agg_data = self.__key_to_group_map[groupkey]
                 aggregated_column.append(func(agg_data))
@@ -136,7 +133,7 @@ class GroupbyTable(object):
         # group keys and the aggregation columns
         final_field_order = list(self.__groupfields) + self.__grouptable.fields
 
-        # Tansform the group key rows into columns
+        # Transform the group key rows into columns
         col_values = izip(*self.__grouptable['groupkey'])
 
         # Assign the columns to the table with the relevant name

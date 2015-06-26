@@ -361,7 +361,9 @@ expressed (equivalent to ``wherenot``).
     sentiment_bearing = data.wherenotin('answer', ('neutral', 'not_sure'))
 
 ``wherefunc`` takes one argument: a function that returns a boolean when passed 
-a row of data (an immutable ordered dict-like object).
+a row of data (an immutable ordered dict-like object). (Optionally, if you pass
+a `fieldname=` argument, you can have the value at that column passed into the
+function, ignoring the rest of the row.)
 
 .. code:: python
 

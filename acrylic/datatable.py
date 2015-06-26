@@ -223,6 +223,13 @@ class DataTable(object):
         return new_datatable
 
     @classmethod
+    def fromjirastring(cls, jirastring):
+        jirastring = (jirastring.replace("||", "|")
+                                .replace("|\n|", "\n")
+                                .strip("|"))
+        return cls.fromcsvstring(jirastring, delimiter="|")
+
+    @classmethod
     def fromdict(cls, datadict):
         """
         Constructs a new DataTable using a dictionary of the format:
@@ -559,6 +566,7 @@ class DataTable(object):
         return GroupbyTable(self, groupfields)
 
     # TODO: this is a placeholder and only does a very simple left join.
+    # TODO: this also doesn't intelligently handle cases where colnames overlap
     def join(self, right_table, on):
         keymap = {}
         for row in right_table:
@@ -722,18 +730,31 @@ class DataTable(object):
             return self.mask([elem == value
                               for elem in self[fieldname]])
 
-    def wherefunc(self, func, negate=False):
+    def wherefunc(self, func, fieldname=None, negate=False):
         """
+        .wherefunc(func, fieldname=None, negate=False)
+
         Applies a function to an entire row and filters the rows based on the
         boolean output of that function.
+
+        If you pass in the fieldname, optionally, the function will simply
+        take the value at that fieldname, rather than the whole row.
         """
-        if negate:
-            return self.mask([not func(item) for item in self])
+        if fieldname is not None:
+            if negate:
+                return self.mask([not func(value) for value in self[fieldname]])
+            else:
+                return self.mask([func(value) for value in self[fieldname]])
         else:
-            return self.mask([func(item) for item in self])
+            if negate:
+                return self.mask([not func(row) for row in self])
+            else:
+                return self.mask([func(row) for row in self])
 
     def wherein(self, fieldname, collection, negate=False):
         """
+        .wherein(fieldname, collection, negate=False)
+
         Returns a new DataTable with rows only where the value at
         `fieldname` is contained within `collection`.
         """
