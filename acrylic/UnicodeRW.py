@@ -41,18 +41,18 @@ class UnicodeReader(object):
         self.reader = csv.reader(f, dialect=dialect, **kwds)
 
     def next(self):
-        row = self.reader.next()
+        row = [line.decode(self._encoding) for line in self.reader.next()]
 
         # \x85 is the alternative line-break: …
         # It confuses Python into breaking the line prematurely.
-        temp_row_ending = row[-1].decode(self._encoding)
+        temp_row_ending = row[-1]
         while u"\x85" in temp_row_ending:
 
             # When the line has a delimiter or the quotechar,
             # it means it has been surrounded by quotechars,
             # so the \x85 won't break it.
-            if (self.reader.dialect.delimiter in temp_row_ending
-               or self.reader.dialect.quotechar in temp_row_ending):
+            if self.reader.dialect.delimiter in temp_row_ending \
+                    or self.reader.dialect.quotechar in temp_row_ending:
                 break
 
             # Sometimes the \x85 was at the end of the line anyway.
@@ -60,18 +60,25 @@ class UnicodeReader(object):
             if not next_row:
                 break
 
+            next_row = [line.decode('utf-8') for line in next_row]
+
             # We need to reconstruct the broken row.
             temp_row_ending = temp_row_ending.replace(u"\x85", u"")
             temp_row_ending += next_row[0]
-            row[-1] = temp_row_ending.encode(self._encoding)
+
+            row[-1] = temp_row_ending
             if len(next_row) > 1:
                 row += next_row[1:]
 
             # We loop again because it's possible the row is broken
             # multiple times.
-            temp_row_ending = row[-1].decode(self._encoding)
+            temp_row_ending = row[-1]
 
-        return [unicode(s, self._encoding) for s in row]
+        return row
+        # try:
+        #     return [unicode(s, self._encoding) for s in row]
+        # except:
+        #     import pdb; pdb.set_trace()
 
     def __iter__(self):
         return self
@@ -103,7 +110,7 @@ class UnicodeWriter(object):
         self.encoder = codecs.getincrementalencoder(encoding)()
 
     def writerow(self, row):
-        self.writer.writerow([s.encode("utf-8") if isinstance(s,str)
+        self.writer.writerow([s.encode("utf-8") if isinstance(s, str)
                               else unicode(s).encode("utf-8")
                               for s in row])
         # Fetch UTF-8 output from the queue ...
@@ -128,6 +135,7 @@ class UnicodeDictWriter(object):
     """
     A CSV writer that writes dicts in the order specified by fieldnames.
     """
+
     def __init__(self,
                  f,
                  fieldnames,
@@ -165,6 +173,7 @@ class UnicodeDictReader(object):
     A CSV reader that reads rows as dicts where keys are the column headers.
     Make sure that the file you're reading has headers.
     """
+
     def __init__(self, f, dialect=csv.excel, encoding='utf-8', **kwds):
         self._reader = UnicodeReader(f,
                                      dialect=dialect,
