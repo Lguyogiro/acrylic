@@ -45,6 +45,8 @@ class GroupbyTable(object):
             raise Exception("Must group a DataTable instance.")
         if len(groupfields) == 0:
             raise Exception("Must pass in at least one groupfield.")
+        if len(datatable_instance.fields) == 0 or len(datatable_instance) == 0:
+            raise Exception("Can't perform a `groupby` on an empty table.")
         self.__key_to_group_map = OrderedDict()
         self.__groupfields = groupfields
         self.__grouptable = datatable.DataTable()

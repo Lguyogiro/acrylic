@@ -44,7 +44,7 @@ class DataTable(object):
         """
         self.__data = OrderedDict()
 
-        if iterable is None:
+        if iterable is None or not iterable:
             # TODO: this exists so that we can create a DataTable
             # TODO: with no data, but we can make headers
             # TODO: what's the best way to address this headers issue?
@@ -59,7 +59,10 @@ class DataTable(object):
                             "%s is not an iterable" % type(iterable))
 
         iterator = iterable.__iter__()
-        first_row = iterator.next()
+        try:
+            first_row = iterator.next()
+        except StopIteration:
+            return
 
         # also identifies OrderedDict
         if isinstance(first_row, dict):
@@ -160,8 +163,10 @@ class DataTable(object):
     @classmethod
     def fromcsv(cls, path, delimiter=",", headers=None):
         f = open(path, 'r')
-        reader = UnicodeRW.UnicodeDictReader(f,
-                                             delimiter=delimiter)
+        if headers is None:
+            reader = UnicodeRW.UnicodeDictReader(f, delimiter=delimiter)
+        else:
+            reader = UnicodeRW.UnicodeReader(f, delimiter=delimiter)
         new_table = cls(reader, headers=headers)
         f.close()
         return new_table
@@ -539,6 +544,12 @@ class DataTable(object):
             raise Exception("Columns do not match:\nself: %s\nother: %s" %
                             (self.fields, other_datatable.fields))
 
+        # TODO: this will fail if we're concatenating one table with `arrays`
+        # TODO: to a table with lists, even if everything else is compatible
+        # TODO: a TypeError is thrown
+        # TODO: if we run through and just append, this may be faster and
+        # TODO: more memory-efficient for large lists, as well as compatible
+        # TODO: with arrays
         if inplace:
             for field in self.fields:
                 self.__data[field] = self[field] + other_datatable[field]

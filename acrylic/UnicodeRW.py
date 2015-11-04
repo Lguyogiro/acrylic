@@ -5,6 +5,9 @@ from collections import OrderedDict
 import csv
 import codecs
 import cStringIO
+import sys
+
+csv.field_size_limit(sys.maxint)
 
 
 class UTF8Recoder:
@@ -43,6 +46,13 @@ class UnicodeReader(object):
     def next(self):
         row = [line.decode(self._encoding) for line in self.reader.next()]
 
+        # the iterator in our file reader doesn't think the file is done yet
+        # but we've received a row with nothing in it after removing
+        # the newline character. we'll return a row with an empty string,
+        # which should be acceptable for CSV, TSV, etc.
+        if not row:
+            return ['']
+
         # \x85 is the alternative line-break: …
         # It confuses Python into breaking the line prematurely.
         temp_row_ending = row[-1]
@@ -60,7 +70,7 @@ class UnicodeReader(object):
             if not next_row:
                 break
 
-            next_row = [line.decode('utf-8') for line in next_row]
+            next_row = [line.decode(self._encoding) for line in next_row]
 
             # We need to reconstruct the broken row.
             temp_row_ending = temp_row_ending.replace(u"\x85", u"")
@@ -75,10 +85,6 @@ class UnicodeReader(object):
             temp_row_ending = row[-1]
 
         return row
-        # try:
-        #     return [unicode(s, self._encoding) for s in row]
-        # except:
-        #     import pdb; pdb.set_trace()
 
     def __iter__(self):
         return self

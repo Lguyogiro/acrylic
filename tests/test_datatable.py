@@ -8,8 +8,8 @@ from nose.tools import (assert_equal,
 from acrylic import DataTable
 from acrylic import ExcelRW
 
-TEST_DATA_LOCATION = './rename/testdata.xlsx'
-TEST_OUT_LOCATION = './rename/testout.xlsx'
+TEST_DATA_LOCATION = './tests/testdata.xlsx'
+TEST_OUT_LOCATION = './tests/testout.xlsx'
 
 excel_reader = ExcelRW.UnicodeDictReader(TEST_DATA_LOCATION)
 data = DataTable(excel_reader)
@@ -30,20 +30,20 @@ def test_00csvstringconstructor():
     # "\'bart\',"dfe\\"ns <- with r'''''' and csv.QUOTE_NONE
     # "'bart',"dfe\"ns <- row copy-pasted from excel
 
-    csv_data = DataTable.fromcsvstring(ur"""apostle   randnum randnum2    colors  regular numbers comma,column
-john    0.1104  0.824761    black   4   strin,"dfe\"ns
-andrew  0.1836  0.568254    black   2   strin,"dfe\"ns
-philip  0.2069  0.662074    red 5   strin,"dfe\"ns
-judas   0.3623  0.055173    red 12  strin,"dfe\"ns
-bartholomew 0.3826  0.512637    black   6   "'bart',"dfe\"ns
-james   0.4481  0.746867    black   9   strin,"dfe\"ns
-ペトロ 0.468   0.606110    red 1   strin,"dfe\"ns
-thomas  0.5114  0.585969    yellow  7   strin,"dfe\"ns
-matthew 0.5927  0.239200    red 8   strin,"dfe\"ns
-simon the less  0.6132  0.762991    green   11  strin,"dfe\"ns
-james   0.6682  0.660805    red 3   strin,"dfe\"ns
-thaddeus    0.7175  0.075857    yellow  10  strin,"dfe\"ns
-""", delimiter="\t")
+    csv_data = DataTable.fromcsvstring(ur'''apostle,randnum,randnum2,colors,regular numbers,"comma,column"
+john,0.1104,0.824761,black,4,"strin,""dfe\""ns"
+andrew,0.1836,0.568254,black,2,"strin,""dfe\""ns"
+philip,0.2069,0.662074,red,5,"strin,""dfe\""ns"
+judas,0.3623,0.055173,red,12,"strin,""dfe\""ns"
+bartholomew,0.3826,0.512637,black,6,"""'bart',""dfe\""ns"
+james,0.4481,0.746867,black,9,"strin,""dfe\""ns"
+peter,0.468,0.606110,red,1,"strin,""dfe\""ns"
+thomas,0.5114,0.585969,yellow,7,"strin,""dfe\""ns"
+matthew,0.5927,0.239200,red,8,"strin,""dfe\""ns"
+simon the less,0.6132,0.762991,green,11,"strin,""dfe\""ns"
+james,0.6682,0.660805,red,3,"strin,""dfe\""ns"
+thaddeus,0.7175,0.075857,yellow,10,"strin,""dfe\""ns"
+''')
 
     for row, csv_string_row in zip(data, csv_data):
         assert_equal(row, csv_string_row)
@@ -234,7 +234,7 @@ def test_12maskwherered():
 def test_14multiwhere():
     global data
 
-    yg_apostles = data.where('colors', ('yellow', 'green'))['apostle']
+    yg_apostles = data.wherein('colors', ('yellow', 'green'))['apostle']
     assert_equal(yg_apostles, ['thaddeus', 'thomas', 'simon the less'])
 
 
@@ -250,7 +250,7 @@ def test_16callablewhere():
     global data
 
     bignums = lambda x: x > 5
-    bignumsresult = data.where('regular numbers', bignums)['regular numbers']
+    bignumsresult = data.wherefunc(bignums, 'regular numbers')['regular numbers']
     assert_equal(bignumsresult, [12, 10, 8, 6, 7, 9, 11])
 
 
@@ -405,6 +405,6 @@ def test_34stringrows():
 
 def test_35wherenot():
     global data
-    green = data.wherenot('colors', {'red', 'yellow', 'black'})
+    green = data.wherenotin('colors', {'red', 'yellow', 'black'})
     assert_equal(green['apostle'], ['simon the less'])
-    assert_raises(Exception, data.wherenot, 'colors', {'a': 5})
+    # assert_raises(Exception, data.wherenotin, 'colors', {'a': 5})
