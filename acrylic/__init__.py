@@ -10,11 +10,11 @@ from .utils import excel
     Acrylic makes manipulating tabular ("table-shaped") data easy with
     an elegant, readable syntax.
 
-    Acrylic is very fast on Pypy.
+    Acrylic is much faster with Pypy.
 
     :copyright: (c) 2015 by Edward M. Lazzarin.
     :license: MIT, see LICENSE for more details.
 
 """
 
-__version__ = '0.1.5'
+__version__ = '0.2.0'

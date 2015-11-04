@@ -41,3 +41,4 @@ var/
 *.iws
 
 todo.txt
+tests/testout.xlsx
