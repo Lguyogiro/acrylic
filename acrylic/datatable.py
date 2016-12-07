@@ -578,20 +578,38 @@ class DataTable(object):
 
     # TODO: this is a placeholder and only does a very simple left join.
     # TODO: this also doesn't intelligently handle cases where colnames overlap
-    def join(self, right_table, on):
-        keymap = {}
-        for row in right_table:
-            if row[on] in keymap:
-                keymap[row[on]].append(row)
-            else:
-                keymap[row[on]] = [row]
+    def join(self, right_table, on=None, right_prefix='R.'):
+        """
+        Inner-joins another DataTable to this one using `on` (iterable of join
+        keys). If two tables share columns other than the join keys, appends
+        right_prefix to the right table's column name. If `on` is not
+        provided, performs a 'natural join' using all columns of the same name.
+        """
+        if on is None:  # if no 'on', perform natural join
+            on = list(set(self.fields).intersection(set(right_table.fields)))
+        if isinstance(on, basestring):
+            on = [on]
+            
+        def get_join_key(row):
+            return tuple(row[header] for header in on)
+        
+        keymap = defaultdict(list)
+        for right_row in right_table:
+            keymap[get_join_key(right_row)].append(right_row)
         new_table = []
-        for row in self:
-            if row[on] in keymap:
-                left_dict = dict(row.items())
-                for item in keymap[row[on]]:
+        for left_row in self:
+            left_key = get_join_key(left_row)
+            if left_key in keymap:
+                left_dict = dict(left_row.items())
+                for right_row in keymap[left_key]:
                     left_dict_copy = left_dict.copy()
-                    left_dict_copy.update(dict(item.items()))
+                    for field, val in right_row.items():
+                        if field in on:
+                            continue
+                        elif field in left_row:
+                            left_dict_copy[right_prefix + field] = val
+                        else:
+                            left_dict_copy[field] = val
                     new_table.append(left_dict_copy)
         return DataTable(new_table)
 
@@ -699,7 +717,13 @@ class DataTable(object):
         sampled_table.sort(random_col_name, inplace=True)
         del sampled_table[random_col_name]
         return sampled_table
-
+    
+    def select(self, *cols):
+        """
+        Returns DataTable with a subset of columns in this table
+        """
+        return DataTable([cols] + zip(*[self[col] for col in cols]))
+    
     def sort(self, fieldname, key=lambda x: x, desc=False, inplace=False):
         """
         This matches Python's built-in sorting signature closely.
