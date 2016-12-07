@@ -722,7 +722,7 @@ class DataTable(object):
         """
         Returns DataTable with a subset of columns in this table
         """
-        return DataTable([{col: row[col] for col in cols} for row in self])
+        return DataTable([cols] + zip(*[self[col] for col in cols]))
     
     def sort(self, fieldname, key=lambda x: x, desc=False, inplace=False):
         """
