@@ -2,7 +2,7 @@
 
 from __future__ import division, print_function
 from array import array
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from cStringIO import StringIO
 from itertools import chain, compress, izip
 from random import random, randrange, shuffle
