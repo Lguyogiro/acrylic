@@ -576,9 +576,7 @@ class DataTable(object):
         """
         return GroupbyTable(self, groupfields)
 
-    # TODO: this is a placeholder and only does a very simple left join.
-    # TODO: this also doesn't intelligently handle cases where colnames overlap
-    def join(self, right_table, on=None, right_prefix='R.'):
+    def join(self, right_table, on=None, right_prefix='R.', outer=False):
         """
         Inner-joins another DataTable to this one using `on` (iterable of join
         keys). If two tables share columns other than the join keys, appends
@@ -611,6 +609,17 @@ class DataTable(object):
                         else:
                             left_dict_copy[field] = val
                     new_table.append(left_dict_copy)
+            elif outer:
+                    left_dict_copy = dict(left_row.items()).copy()
+                    for field in right_table.fields:
+                        if field in on:
+                            continue
+                        elif field in left_row:
+                            left_dict_copy[right_prefix + field] = None
+                        else:
+                            left_dict_copy[field] = None
+                    new_table.append(left_dict_copy)
+
         return DataTable(new_table)
 
     def mask(self, masklist):
@@ -640,6 +649,9 @@ class DataTable(object):
         ith the results of applying `function` to each element of that column.
         """
         self[fieldname] = self.apply(function, fieldname)
+
+    def outer_join(self, right, on=None, right_prefix='R.', outer=True):
+        return self.join(right, on, right_prefix, outer)
 
     def rename(self, old_fieldname, new_fieldname):
         """
