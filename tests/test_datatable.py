@@ -11,6 +11,7 @@ from acrylic import ExcelRW
 TEST_DATA_LOCATION = './tests/testdata.xlsx'
 TEST_OUT_LOCATION = './tests/testout.xlsx'
 
+
 excel_reader = ExcelRW.UnicodeDictReader(TEST_DATA_LOCATION)
 data = DataTable(excel_reader)
 
@@ -408,3 +409,42 @@ def test_35wherenot():
     green = data.wherenotin('colors', {'red', 'yellow', 'black'})
     assert_equal(green['apostle'], ['simon the less'])
     # assert_raises(Exception, data.wherenotin, 'colors', {'a': 5})
+
+
+def test_36innerjoin():
+    students = DataTable.fromjirastring(u'||student_id||student_name||'
+                                        u'advisor_id||\n|1|student_1|1|\n|2|'
+                                        u'student_2|8|\n|4|student_4|2|\n|5|'
+                                        u'student_5|3|\n|7|student_7|3|\n|9|'
+                                        u'student_9|1|\n|10|student_10|3|')
+    advisors = DataTable.fromjirastring(u'||advisor_id||advisor_name||\n|1|'
+                                        u'advisor_1|\n|3|advisor_3|\n|5|'
+                                        u'advisor_5|')
+
+    correct_inner_join_str = (u'||student_id||advisor_id||advisor_name||'
+                              u'student_name||\n|1|1|advisor_1|student_1|\n|5|'
+                              u'3|advisor_3|student_5|\n|7|3|advisor_3|'
+                              u'student_7|\n|9|1|advisor_1|student_9|\n|10|3|'
+                              u'advisor_3|student_10|')
+    assert_equal(students.join(advisors, on='advisor_id').jira,
+                 correct_inner_join_str)
+
+
+def test_37outerjoin():
+    students = DataTable.fromjirastring(u'||student_id||student_name||'
+                                        u'advisor_id||\n|1|student_1|1|\n|2|'
+                                        u'student_2|8|\n|4|student_4|2|\n|5|'
+                                        u'student_5|3|\n|7|student_7|3|\n|9|'
+                                        u'student_9|1|\n|10|student_10|3|')
+    advisors = DataTable.fromjirastring(u'||advisor_id||advisor_name||\n|1|'
+                                        u'advisor_1|\n|3|advisor_3|\n|5|'
+                                        u'advisor_5|')
+
+    correct_outer_join_str = (u'||student_id||advisor_id||advisor_name||'
+                              u'student_name||\n|1|1|advisor_1|student_1|\n|2|'
+                              u'8|None|student_2|\n|4|2|None|student_4|\n|5|3|'
+                              u'advisor_3|student_5|\n|7|3|advisor_3|student_7|'
+                              u'\n|9|1|advisor_1|student_9|\n|10|3|advisor_3|'
+                              u'student_10|')
+    assert_equal(students.outer_join(advisors, on='advisor_id').jira,
+                 correct_outer_join_str)
