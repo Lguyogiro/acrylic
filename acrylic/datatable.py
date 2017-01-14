@@ -576,6 +576,10 @@ class DataTable(object):
         """
         return GroupbyTable(self, groupfields)
 
+    def full_outer_join(self, right_table, on=None, right_prefix='R.'):
+        """TODO"""
+        pass
+
     def join(self, right_table, on=None, right_prefix='R.', outer=False):
         """
         Inner-joins another DataTable to this one using `on` (iterable of join
